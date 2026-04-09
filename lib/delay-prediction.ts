@@ -1,19 +1,7 @@
 import { prisma } from './prisma';
 import { DelayPrediction } from '@/types';
-
-function getTimeOfDay(date: Date): string {
-  const hour = date.getHours();
-  if (hour >= 6 && hour < 12) return 'morning';
-  if (hour >= 12 && hour < 18) return 'afternoon';
-  if (hour >= 18 && hour < 22) return 'evening';
-  return 'night';
-}
-
-function getRiskLevel(percentage: number): 'low' | 'medium' | 'high' {
-  if (percentage < 20) return 'low';
-  if (percentage < 50) return 'medium';
-  return 'high';
-}
+import { TimeOfDay } from '@/src/domain/value-objects/TimeOfDay';
+import { RiskLevel } from '@/src/domain/value-objects/RiskLevel';
 
 export async function calculateDelayPrediction(
   airline: string,
@@ -21,8 +9,8 @@ export async function calculateDelayPrediction(
   destination: string,
   scheduledTime: Date
 ): Promise<DelayPrediction> {
+  const timeOfDay = TimeOfDay.fromDate(scheduledTime);
   const dateStr = scheduledTime.toISOString().split('T')[0];
-  const timeOfDay = getTimeOfDay(scheduledTime);
 
   const records = await prisma.delayRecord.findMany({
     where: {
@@ -32,7 +20,7 @@ export async function calculateDelayPrediction(
         { destination: destination },
       ],
       date: dateStr,
-      timeOfDay: timeOfDay,
+      timeOfDay: timeOfDay.value,
     },
   });
 
@@ -55,23 +43,27 @@ export async function calculateDelayPrediction(
 
     const delayedCount = broaderRecords.filter(r => r.isDelayed).length;
     const avgDelay = broaderRecords.reduce((sum, r) => sum + r.delayMinutes, 0) / broaderRecords.length;
+    const percentage = (delayedCount / broaderRecords.length) * 100;
+    const riskLevel = RiskLevel.fromPercentage(percentage);
 
     return {
-      percentage: Math.round((delayedCount / broaderRecords.length) * 100),
+      percentage: Math.round(percentage),
       avgDelayMinutes: Math.round(avgDelay),
       basedOnRecords: broaderRecords.length,
-      riskLevel: getRiskLevel((delayedCount / broaderRecords.length) * 100),
+      riskLevel: riskLevel.value,
     };
   }
 
   const delayedCount = records.filter(r => r.isDelayed).length;
   const avgDelay = records.reduce((sum, r) => sum + r.delayMinutes, 0) / records.length;
+  const percentage = (delayedCount / records.length) * 100;
+  const riskLevel = RiskLevel.fromPercentage(percentage);
 
   return {
-    percentage: Math.round((delayedCount / records.length) * 100),
+    percentage: Math.round(percentage),
     avgDelayMinutes: Math.round(avgDelay),
     basedOnRecords: records.length,
-    riskLevel: getRiskLevel((delayedCount / records.length) * 100),
+    riskLevel: riskLevel.value,
   };
 }
 
@@ -84,8 +76,8 @@ export async function recordFlight(
   actualTime: Date | null,
   status: string
 ) {
+  const timeOfDay = TimeOfDay.fromDate(scheduledTime);
   const dateStr = scheduledTime.toISOString().split('T')[0];
-  const timeOfDay = getTimeOfDay(scheduledTime);
   const delayMinutes = actualTime 
     ? Math.max(0, Math.round((actualTime.getTime() - scheduledTime.getTime()) / 60000))
     : 0;
@@ -113,7 +105,7 @@ export async function recordFlight(
       delayMinutes: delayMinutes,
       isDelayed: isDelayed,
       date: dateStr,
-      timeOfDay: timeOfDay,
+      timeOfDay: timeOfDay.value,
     },
   });
 }

@@ -9,3 +9,7 @@ export { FlightStatus } from './FlightStatus';
 export type { FlightStatusValue } from './FlightStatus';
 export { RiskLevel } from './RiskLevel';
 export type { RiskLevelValue } from './RiskLevel';
+export { TimeOfDay } from './TimeOfDay';
+export type { TimeOfDayValue } from './TimeOfDay';
+export { RISK_LEVEL_THRESHOLDS } from './RiskLevel';
+
