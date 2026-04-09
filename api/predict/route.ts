@@ -1,20 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { calculateDelayPrediction } from '@/lib/delay-prediction';
-import { rateLimit, getClientIdentifier } from '@/lib/middleware/rateLimit';
+import { RateLimiter, getClientIdentifier } from '@/lib/middleware/rateLimit';
 import { sanitizeString, validateCallsign } from '@/lib/middleware/validation';
+
+const rateLimiter = new RateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 100,
+  keyPrefix: 'predict',
+});
 
 export async function GET(request: NextRequest) {
   const clientId = getClientIdentifier(request);
-  const { success, remaining, resetIn } = rateLimit(clientId);
+  const result = await rateLimiter.check(clientId);
 
-  if (!success) {
+  if (!result.success) {
     return NextResponse.json(
       {
         error: 'Rate limit exceeded',
         message: 'Too many requests. Please try again later.',
-        retryAfter: Math.ceil(resetIn / 1000),
+        retryAfter: Math.ceil(result.resetIn / 1000),
       },
-      { status: 429 }
+      { 
+        status: 429,
+        headers: {
+          'X-RateLimit-Remaining': result.remaining.toString(),
+          'X-RateLimit-Reset': Math.ceil(result.resetIn / 1000).toString(),
+          'Retry-After': Math.ceil(result.resetIn / 1000).toString(),
+        },
+      }
     );
   }
 
