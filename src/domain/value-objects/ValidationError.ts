@@ -45,6 +45,14 @@ export class ValidationError {
     );
   }
 
+  static notFound(entity: string, id: string): ValidationError {
+    return new ValidationError(
+      `${entity}.id`,
+      `${entity} with id '${id}' was not found`,
+      'NOT_FOUND'
+    );
+  }
+
   equals(other: ValidationError): boolean {
     return this.code === other.code && this.field === other.field;
   }
