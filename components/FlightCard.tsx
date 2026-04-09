@@ -9,9 +9,10 @@ import { DelayIndicator } from './DelayIndicator';
 interface FlightCardProps {
   flight: Flight;
   type: 'departure' | 'arrival';
+  onClick?: () => void;
 }
 
-export function FlightCard({ flight, type }: FlightCardProps) {
+export function FlightCard({ flight, type, onClick }: FlightCardProps) {
   const time = flight.departureTime || flight.arrivalTime;
   const formattedTime = time ? format(new Date(time), 'HH:mm', { locale: es }) : '--:--';
   
@@ -31,7 +32,11 @@ export function FlightCard({ flight, type }: FlightCardProps) {
   const status = statusConfig[flight.status] || statusConfig.unknown;
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-md transition-shadow">
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full text-left bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-md hover:border-primary-300 dark:hover:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
@@ -76,6 +81,6 @@ export function FlightCard({ flight, type }: FlightCardProps) {
           </div>
         </div>
       )}
-    </div>
+    </button>
   );
 }
