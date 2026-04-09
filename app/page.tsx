@@ -1,94 +1,70 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { AirportSelector, FlightList, FlightSearch, ToastContainer, useToast } from '@/components';
-import { Flight } from '@/types';
 import { Plane, RefreshCw, Info } from 'lucide-react';
 import { getAirportByIcao } from '@/lib/airports';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useFlights } from '@/hooks';
+import { Flight } from '@/types';
 
 export default function HomePage() {
   const [selectedAirport, setSelectedAirport] = useState('LEMD');
   const [flightType, setFlightType] = useState<'departures' | 'arrivals'>('departures');
-  const [flights, setFlights] = useState<Flight[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [initialLoad, setInitialLoad] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [searchCallsign, setSearchCallsign] = useState('');
   const [searchResult, setSearchResult] = useState<Flight | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const { toasts, dismissToast, success, error: showError } = useToast();
 
   const airport = getAirportByIcao(selectedAirport);
 
-  const fetchFlights = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const {
+    flights,
+    isLoading,
+    isValidating,
+    mutate,
+    lastUpdated,
+  } = useFlights({
+    airport: selectedAirport,
+    type: flightType,
+    refreshInterval: 120000,
+    revalidateOnFocus: true,
+    dedupingInterval: 5000,
+  });
 
-    try {
-      const response = await fetch(`/api/flights?airport=${selectedAirport}&type=${flightType}`);
+  const handleRefresh = useCallback(async () => {
+    await mutate();
+    success('Flights refreshed');
+  }, [mutate, success]);
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch flights: ${response.statusText}`);
-      }
+  const handleSearch = useCallback((callsign: string) => {
+    const sanitizedCallsign = callsign.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+    
+    const foundFlight = flights.find((f: Flight) =>
+      f.callsign.replace(/\s/g, '').toUpperCase().includes(sanitizedCallsign)
+    );
 
-      const data = await response.json();
-      setFlights(data.flights || []);
-      setLastUpdated(new Date());
-      
-      if (initialLoad) {
-        setInitialLoad(false);
-      }
-    } catch (err) {
-      setError('Unable to fetch flights. Please try again later.');
-      showError('Failed to load flights');
-      setFlights([]);
-    } finally {
-      setLoading(false);
+    if (foundFlight) {
+      setSearchResult(foundFlight);
+      setSearchCallsign(callsign);
+      success(`Found flight: ${foundFlight.callsign}`);
+    } else {
+      setSearchResult(null);
+      setSearchCallsign('');
+      showError(`No flight found with callsign: ${callsign}`);
     }
-  }, [selectedAirport, flightType, initialLoad, showError]);
+  }, [flights, success, showError]);
 
-  const handleSearch = useCallback(async (callsign: string) => {
-    setLoading(true);
-    setError(null);
-    setFlights([]);
+  const handleAirportChange = useCallback((icao: string) => {
+    setSelectedAirport(icao);
     setSearchResult(null);
+    setSearchCallsign('');
+  }, []);
 
-    try {
-      const sanitizedCallsign = callsign.replace(/[^A-Z0-9]/gi, '').toUpperCase();
-      const response = await fetch(`/api/flights?airport=${selectedAirport}&type=${flightType}`);
-
-      if (!response.ok) {
-        throw new Error('Failed to search flights');
-      }
-
-      const data = await response.json();
-      const foundFlight = data.flights?.find((f: Flight) =>
-        f.callsign.replace(/\s/g, '').toUpperCase().includes(sanitizedCallsign)
-      );
-
-      if (foundFlight) {
-        setSearchResult(foundFlight);
-        success(`Found flight: ${foundFlight.callsign}`);
-      } else {
-        setError(`No flight found with callsign: ${callsign}`);
-        showError('Flight not found');
-      }
-    } catch (err) {
-      setError('Unable to search flight. Please try again.');
-      showError('Search failed');
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedAirport, flightType, success, showError]);
-
-  useEffect(() => {
-    fetchFlights();
-  }, [fetchFlights]);
-
-  useEffect(() => {
-    const interval = setInterval(fetchFlights, 120000);
-    return () => clearInterval(interval);
-  }, [fetchFlights]);
+  const handleFlightTypeChange = useCallback((type: 'departures' | 'arrivals') => {
+    setFlightType(type);
+    setSearchResult(null);
+    setSearchCallsign('');
+  }, []);
 
   const formattedLastUpdated = lastUpdated
     ? lastUpdated.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
@@ -111,7 +87,7 @@ export default function HomePage() {
               </div>
               {lastUpdated && (
                 <div className="flex items-center gap-2 text-sm text-gray-500" aria-live="polite">
-                  <RefreshCw className="w-4 h-4" aria-hidden="true" />
+                  <RefreshCw className={`w-4 h-4 ${isValidating ? 'animate-spin' : ''}`} aria-hidden="true" />
                   <span>Updated: {formattedLastUpdated}</span>
                 </div>
               )}
@@ -120,7 +96,7 @@ export default function HomePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <AirportSelector
                 value={selectedAirport}
-                onChange={setSelectedAirport}
+                onChange={handleAirportChange}
                 label="Select Airport"
               />
 
@@ -130,7 +106,7 @@ export default function HomePage() {
                 </label>
                 <div className="flex gap-2" role="group" aria-labelledby="flight-type-label">
                   <button
-                    onClick={() => setFlightType('departures')}
+                    onClick={() => handleFlightTypeChange('departures')}
                     aria-pressed={flightType === 'departures'}
                     className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
                       flightType === 'departures'
@@ -141,7 +117,7 @@ export default function HomePage() {
                     Departures
                   </button>
                   <button
-                    onClick={() => setFlightType('arrivals')}
+                    onClick={() => handleFlightTypeChange('arrivals')}
                     aria-pressed={flightType === 'arrivals'}
                     className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
                       flightType === 'arrivals'
@@ -159,7 +135,7 @@ export default function HomePage() {
 
         <main id="main-content" className="max-w-5xl mx-auto px-4 py-6">
           <div className="mb-6">
-            <FlightSearch onSearch={handleSearch} loading={loading} />
+            <FlightSearch onSearch={handleSearch} loading={isLoading} />
           </div>
 
           {airport && (
@@ -174,12 +150,6 @@ export default function HomePage() {
                   </p>
                 </div>
               </div>
-            </div>
-          )}
-
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg" role="alert">
-              <p className="text-red-700">{error}</p>
             </div>
           )}
 
@@ -198,17 +168,17 @@ export default function HomePage() {
               </span>
             </h2>
             <button
-              onClick={fetchFlights}
-              disabled={loading}
+              onClick={handleRefresh}
+              disabled={isLoading || isValidating}
               className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
               aria-label="Refresh flights"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
+              <RefreshCw className={`w-4 h-4 ${isLoading || isValidating ? 'animate-spin' : ''}`} aria-hidden="true" />
               Refresh
             </button>
           </div>
 
-          {loading && initialLoad ? (
+          {isLoading && flights.length === 0 ? (
             <div className="space-y-3" aria-label="Loading flights">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
@@ -235,7 +205,7 @@ export default function HomePage() {
             <FlightList
               flights={flights}
               type={flightType === 'departures' ? 'departure' : 'arrival'}
-              loading={loading}
+              loading={isLoading || isValidating}
               emptyMessage="No flights available at this time. Flights are typically available 2 hours before departure."
             />
           )}
