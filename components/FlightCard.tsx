@@ -3,8 +3,10 @@
 import { Flight } from '@/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Plane, Clock, MapPin, ArrowRight } from 'lucide-react';
+import { Plane, Clock, MapPin } from 'lucide-react';
 import { DelayIndicator } from './DelayIndicator';
+import { useFlightHelpers } from '@/hooks/useFlightHelpers';
+import { useDelayRisk } from '@/hooks/useDelayRisk';
 
 interface FlightCardProps {
   flight: Flight;
@@ -13,23 +15,14 @@ interface FlightCardProps {
 }
 
 export function FlightCard({ flight, type, onClick }: FlightCardProps) {
+  const helpers = useFlightHelpers(flight);
+  const delayRisk = useDelayRisk(flight.delayPrediction);
+
   const time = flight.departureTime || flight.arrivalTime;
   const formattedTime = time ? format(new Date(time), 'HH:mm', { locale: es }) : '--:--';
   
   const destination = type === 'departure' ? flight.destination : flight.origin;
   const location = destination !== 'Unknown' ? destination : (type === 'departure' ? 'Destino' : 'Origen');
-
-  const statusConfig: Record<string, { label: string; className: string }> = {
-    scheduled: { label: 'Programado', className: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' },
-    boarding: { label: 'Embarcando', className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' },
-    departed: { label: 'Despegado', className: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' },
-    arrived: { label: 'Llegado', className: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' },
-    delayed: { label: 'Retrasado', className: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' },
-    cancelled: { label: 'Cancelado', className: 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200' },
-    unknown: { label: 'Desconocido', className: 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400' },
-  };
-
-  const status = statusConfig[flight.status] || statusConfig.unknown;
 
   return (
     <button
@@ -44,8 +37,8 @@ export function FlightCard({ flight, type, onClick }: FlightCardProps) {
               <Plane className={`w-4 h-4 text-gray-400 dark:text-gray-500 ${type === 'departure' ? '' : 'rotate-90'}`} />
               <span className="font-mono font-bold text-lg text-gray-900 dark:text-gray-100">{flight.callsign}</span>
             </div>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${status.className}`}>
-              {status.label}
+            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${helpers.statusColor}`}>
+              {helpers.statusLabel}
             </span>
           </div>
           
@@ -54,7 +47,7 @@ export function FlightCard({ flight, type, onClick }: FlightCardProps) {
           </div>
         </div>
 
-        {flight.delayPrediction && (
+        {helpers.hasPrediction && flight.delayPrediction && (
           <DelayIndicator prediction={flight.delayPrediction} size="sm" />
         )}
       </div>
@@ -73,7 +66,7 @@ export function FlightCard({ flight, type, onClick }: FlightCardProps) {
         </div>
       </div>
 
-      {flight.delayPrediction && (
+      {helpers.hasPrediction && flight.delayPrediction && (
         <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
             <span>Avg. delay: {flight.delayPrediction.avgDelayMinutes} min</span>

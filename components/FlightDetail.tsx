@@ -4,8 +4,10 @@ import { useEffect, useRef } from 'react';
 import { Flight } from '@/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { X, Plane, Clock, MapPin, Building2, Navigation, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
+import { X, Plane, Clock, Building2, Navigation, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
 import { DelayBar } from './DelayIndicator';
+import { useFlightHelpers } from '@/hooks/useFlightHelpers';
+import { useDelayRisk } from '@/hooks/useDelayRisk';
 
 interface FlightDetailProps {
   flight: Flight;
@@ -15,6 +17,8 @@ interface FlightDetailProps {
 
 export function FlightDetail({ flight, type, onClose }: FlightDetailProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const helpers = useFlightHelpers(flight);
+  const delayRisk = useDelayRisk(flight.delayPrediction);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -41,18 +45,6 @@ export function FlightDetail({ flight, type, onClose }: FlightDetailProps) {
   const origin = flight.origin || 'Unknown';
   const destination = flight.destination || 'Unknown';
 
-  const statusLabels: Record<string, { label: string; className: string }> = {
-    scheduled: { label: 'Programado', className: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' },
-    boarding: { label: 'Embarcando', className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' },
-    departed: { label: 'Despegado', className: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' },
-    arrived: { label: 'Llegado', className: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' },
-    delayed: { label: 'Retrasado', className: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' },
-    cancelled: { label: 'Cancelado', className: 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200' },
-    unknown: { label: 'Desconocido', className: 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400' },
-  };
-
-  const status = statusLabels[flight.status] || statusLabels.unknown;
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
@@ -71,8 +63,8 @@ export function FlightDetail({ flight, type, onClose }: FlightDetailProps) {
             <h2 id="flight-detail-title" className="font-bold text-xl text-gray-900 dark:text-gray-100">
               {flight.callsign}
             </h2>
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${status.className}`}>
-              {status.label}
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${helpers.statusColor}`}>
+              {helpers.statusLabel}
             </span>
           </div>
           <button
@@ -145,7 +137,7 @@ export function FlightDetail({ flight, type, onClose }: FlightDetailProps) {
             </div>
           </div>
 
-          {flight.delayPrediction && (
+          {helpers.hasPrediction && flight.delayPrediction && (
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
               <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-3">
                 <AlertTriangle className="w-4 h-4" />
@@ -158,7 +150,7 @@ export function FlightDetail({ flight, type, onClose }: FlightDetailProps) {
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Retraso promedio</p>
                   <p className="font-semibold text-gray-900 dark:text-gray-100">
-                    {flight.delayPrediction.avgDelayMinutes} min
+                    {delayRisk.formattedDelay}
                   </p>
                 </div>
                 <div>
@@ -169,20 +161,20 @@ export function FlightDetail({ flight, type, onClose }: FlightDetailProps) {
                 </div>
               </div>
               <div className="mt-4 flex items-center gap-2">
-                {flight.delayPrediction.riskLevel === 'low' ? (
+                {delayRisk.confidenceLevel === 'low' ? (
                   <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                ) : flight.delayPrediction.riskLevel === 'medium' ? (
+                ) : delayRisk.confidenceLevel === 'medium' ? (
                   <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                 ) : (
                   <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
                 )}
                 <span className={`font-medium capitalize ${
-                  flight.delayPrediction.riskLevel === 'low' ? 'text-green-700 dark:text-green-300' :
-                  flight.delayPrediction.riskLevel === 'medium' ? 'text-amber-700 dark:text-amber-300' :
+                  delayRisk.confidenceLevel === 'low' ? 'text-green-700 dark:text-green-300' :
+                  delayRisk.confidenceLevel === 'medium' ? 'text-amber-700 dark:text-amber-300' :
                   'text-red-700 dark:text-red-300'
                 }`}>
-                  {flight.delayPrediction.riskLevel === 'low' ? 'Bajo riesgo' :
-                   flight.delayPrediction.riskLevel === 'medium' ? 'Riesgo medio' :
+                  {delayRisk.confidenceLevel === 'low' ? 'Bajo riesgo' :
+                   delayRisk.confidenceLevel === 'medium' ? 'Riesgo medio' :
                    'Alto riesgo'}
                 </span>
               </div>

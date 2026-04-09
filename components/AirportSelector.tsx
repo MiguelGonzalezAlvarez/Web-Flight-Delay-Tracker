@@ -4,6 +4,7 @@ import { Airport } from '@/types';
 import { MAJOR_AIRPORTS, SPANISH_AIRPORTS } from '@/lib/airports';
 import { useState, useMemo } from 'react';
 import { Plane, ChevronDown } from 'lucide-react';
+import { useAirportSearch, useMajorAirports } from '@/hooks/useAirportSearch';
 
 interface AirportSelectorProps {
   value: string;
@@ -15,17 +16,8 @@ export function AirportSelector({ value, onChange, label }: AirportSelectorProps
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredAirports = useMemo(() => {
-    const query = searchQuery.toLowerCase().trim();
-    if (!query) return null;
-    return SPANISH_AIRPORTS.filter(
-      a =>
-        a.icao.toLowerCase().includes(query) ||
-        a.iata.toLowerCase().includes(query) ||
-        a.name.toLowerCase().includes(query) ||
-        a.city.toLowerCase().includes(query)
-    );
-  }, [searchQuery]);
+  const filteredAirports = useAirportSearch(SPANISH_AIRPORTS, searchQuery);
+  const majorAirports = useMajorAirports(SPANISH_AIRPORTS);
 
   const selectedAirport = SPANISH_AIRPORTS.find(a => a.icao === value);
 
@@ -39,6 +31,8 @@ export function AirportSelector({ value, onChange, label }: AirportSelectorProps
     setIsOpen(false);
     setSearchQuery('');
   };
+
+  const showFilteredList = searchQuery.trim().length > 0;
 
   return (
     <div className="relative">
@@ -88,7 +82,7 @@ export function AirportSelector({ value, onChange, label }: AirportSelectorProps
             />
           </div>
           <div className="p-2">
-            {filteredAirports !== null ? (
+            {showFilteredList ? (
               filteredAirports.length > 0 ? (
                 filteredAirports.map((airport) => (
                   <AirportOption
@@ -103,10 +97,10 @@ export function AirportSelector({ value, onChange, label }: AirportSelectorProps
               )
             ) : (
               <>
-                {MAJOR_AIRPORTS.length > 0 && (
+                {majorAirports.length > 0 && (
                   <div className="mb-2">
                     <p className="px-2 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Major Airports</p>
-                    {MAJOR_AIRPORTS.map((airport) => (
+                    {majorAirports.map((airport) => (
                       <AirportOption
                         key={airport.icao}
                         airport={airport}
@@ -118,7 +112,7 @@ export function AirportSelector({ value, onChange, label }: AirportSelectorProps
                 )}
                 <div>
                   <p className="px-2 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Other Airports</p>
-                  {SPANISH_AIRPORTS.filter(a => !MAJOR_AIRPORTS.some(m => m.icao === a.icao)).map((airport) => (
+                  {SPANISH_AIRPORTS.filter(a => !majorAirports.some(m => m.icao === a.icao)).map((airport) => (
                     <AirportOption
                       key={airport.icao}
                       airport={airport}
