@@ -12,6 +12,8 @@ export interface AirportProps {
   name: string;
   city: string;
   country?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export class Airport {
@@ -21,18 +23,25 @@ export class Airport {
   public readonly city: string;
   public readonly country: string;
 
+  public readonly latitude?: number;
+  public readonly longitude?: number;
+
   private constructor(props: {
     icao: IcaoCode;
     iata?: IataCode;
     name: string;
     city: string;
     country: string;
+    latitude?: number;
+    longitude?: number;
   }) {
     this.icao = props.icao;
     this.iata = props.iata;
     this.name = props.name;
     this.city = props.city;
     this.country = props.country;
+    this.latitude = props.latitude;
+    this.longitude = props.longitude;
     Object.freeze(this);
   }
 
@@ -61,6 +70,19 @@ export class Airport {
 
     const country = props.country || 'Spain';
 
+    let latitude: number | undefined;
+    let longitude: number | undefined;
+    if (props.latitude !== undefined && props.longitude !== undefined) {
+      if (props.latitude < -90 || props.latitude > 90) {
+        return failure(ValidationError.invalid('Airport latitude', 'Latitude must be between -90 and 90'));
+      }
+      if (props.longitude < -180 || props.longitude > 180) {
+        return failure(ValidationError.invalid('Airport longitude', 'Longitude must be between -180 and 180'));
+      }
+      latitude = props.latitude;
+      longitude = props.longitude;
+    }
+
     return success(
       new Airport({
         icao: icaoResult.value,
@@ -68,6 +90,8 @@ export class Airport {
         name: props.name,
         city: props.city,
         country,
+        latitude,
+        longitude,
       })
     );
   }
@@ -122,6 +146,17 @@ export class Airport {
     return `${this.city}, ${this.country}`;
   }
 
+  getCoordinates(): { latitude: number; longitude: number } | null {
+    if (this.latitude !== undefined && this.longitude !== undefined) {
+      return { latitude: this.latitude, longitude: this.longitude };
+    }
+    return null;
+  }
+
+  hasCoordinates(): boolean {
+    return this.latitude !== undefined && this.longitude !== undefined;
+  }
+
   equals(other: Airport): boolean {
     return this.icao.equals(other.icao);
   }
@@ -138,6 +173,8 @@ export class Airport {
       name: this.name,
       city: this.city,
       country: this.country,
+      latitude: this.latitude,
+      longitude: this.longitude,
     };
   }
 }

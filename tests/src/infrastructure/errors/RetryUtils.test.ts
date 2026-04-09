@@ -13,7 +13,7 @@ import {
   withCircuitBreaker,
   createCircuitBreakerState,
   AsyncOperationQueue,
-} from '@/src/domain/errors/RetryUtils';
+} from '@/src/infrastructure/errors/RetryUtils';
 
 describe('AppError', () => {
   describe('RepositoryError', () => {

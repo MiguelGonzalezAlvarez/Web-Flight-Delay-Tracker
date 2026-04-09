@@ -1,4 +1,4 @@
-import { isRetryableError } from './AppError';
+import { isRetryableError } from '../../domain/errors/AppError';
 
 export interface RetryOptions {
   maxAttempts?: number;

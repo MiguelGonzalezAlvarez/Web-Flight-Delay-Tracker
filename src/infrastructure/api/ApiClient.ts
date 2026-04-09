@@ -1,4 +1,4 @@
-import { withRetry, withCircuitBreaker, createCircuitBreakerState } from '../../domain/errors/RetryUtils';
+import { withRetry, withCircuitBreaker, createCircuitBreakerState } from '../errors/RetryUtils';
 import { NetworkError } from '../../domain/errors/AppError';
 
 export interface ApiClientConfig {

@@ -25,3 +25,13 @@ export { apiSuccess, apiFailure } from './api';
 
 export { OpenSkyService, createOpenSkyService, OPENSKY_BOUNDS_SPAIN } from './api';
 export type { FlightTrackerConfig } from './api';
+
+export {
+  withRetry,
+  withCircuitBreaker,
+  createCircuitBreakerState,
+  AsyncOperationQueue,
+  type RetryOptions,
+  type CircuitBreakerState,
+} from './errors';
+

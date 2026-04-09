@@ -16,10 +16,12 @@ export class FlightPathCalculator {
   private static readonly AVERAGE_SPEED_KMH = 800;
 
   calculateDistance(origin: Airport, destination: Airport): number {
-    return this.calculateDistanceBetweenCoordinates(
-      { latitude: 0, longitude: 0 },
-      { latitude: 0, longitude: 0 }
-    );
+    const originCoords = origin.getCoordinates();
+    const destCoords = destination.getCoordinates();
+    if (!originCoords || !destCoords) {
+      return 0;
+    }
+    return this.calculateDistanceBetweenCoordinates(originCoords, destCoords);
   }
 
   calculateDistanceByCoordinates(origin: Coordinates, destination: Coordinates): number {
@@ -46,8 +48,16 @@ export class FlightPathCalculator {
     destination: Airport,
     averageSpeedKmh: number = FlightPathCalculator.AVERAGE_SPEED_KMH
   ): FlightPathResult {
-    const originCoords = { latitude: 0, longitude: 0 };
-    const destCoords = { latitude: 0, longitude: 0 };
+    const originCoords = origin.getCoordinates();
+    const destCoords = destination.getCoordinates();
+    if (!originCoords || !destCoords) {
+      return {
+        distanceKm: 0,
+        estimatedDurationMinutes: 0,
+        bearing: 0,
+      };
+    }
+
     const distance = this.calculateDistanceBetweenCoordinates(originCoords, destCoords);
     const duration = (distance / averageSpeedKmh) * 60;
     const bearing = this.calculateBearing(originCoords, destCoords);
@@ -82,7 +92,10 @@ export class FlightPathCalculator {
     let minDistance = Infinity;
 
     for (const airport of airports) {
-      const airportCoords = { latitude: 0, longitude: 0 };
+      const airportCoords = airport.getCoordinates();
+      if (!airportCoords) {
+        continue;
+      }
       const distance = this.calculateDistanceBetweenCoordinates(coordinates, airportCoords);
 
       if (distance < minDistance) {
