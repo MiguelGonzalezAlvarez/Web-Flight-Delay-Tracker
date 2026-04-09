@@ -144,6 +144,4 @@ export function getFeatureFlag(key: keyof FeatureFlags): boolean {
   return getConfig().features[key];
 }
 
-export function isFeatureEnabled(key: keyof FeatureFlags): boolean {
-  return getFeatureFlag(key);
-}
+export { isFeatureEnabled } from './featureFlags';

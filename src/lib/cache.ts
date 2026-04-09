@@ -6,7 +6,7 @@ export interface CacheEntry<T> {
   ttl: number;
 }
 
-export interface CacheConfig {
+export interface CacheOptions {
   maxSize?: number;
   defaultTTL?: number;
 }
@@ -15,7 +15,7 @@ export class Cache<T> {
   private cache: LRUCache<string, CacheEntry<T>>;
   private readonly defaultTTL: number;
 
-  constructor(config: CacheConfig = {}) {
+  constructor(config: CacheOptions = {}) {
     this.cache = new LRUCache<string, CacheEntry<T>>(config.maxSize ?? 100);
     this.defaultTTL = config.defaultTTL ?? 60000;
   }
@@ -124,6 +124,6 @@ export class Cache<T> {
   }
 }
 
-export function createCache<T>(config?: CacheConfig): Cache<T> {
+export function createCache<T>(config?: CacheOptions): Cache<T> {
   return new Cache<T>(config);
 }
