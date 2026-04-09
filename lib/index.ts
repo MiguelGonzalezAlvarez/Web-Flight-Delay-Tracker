@@ -1,3 +1,1 @@
-export * from './airports';
-export * from './delay-prediction';
-export * from './middleware';
+export { prisma } from './prisma';
