@@ -7,3 +7,4 @@ export { ErrorBoundary } from './ErrorBoundary';
 export { Skeleton, FlightCardSkeleton, FlightListSkeleton, SearchSkeleton, AirportSelectorSkeleton } from './LoadingSkeleton';
 export { ToastContainer, useToast } from './Toast';
 export type { ToastType } from './Toast';
+export { ThemeToggle } from './ThemeToggle';

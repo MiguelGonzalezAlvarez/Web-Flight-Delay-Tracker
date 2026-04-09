@@ -14,7 +14,7 @@ interface FlightListProps {
 export function FlightList({ flights, type, loading, emptyMessage }: FlightListProps) {
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+      <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
         <Loader2 className="w-8 h-8 animate-spin mb-3" />
         <span>Loading flights...</span>
       </div>
@@ -23,7 +23,7 @@ export function FlightList({ flights, type, loading, emptyMessage }: FlightListP
 
   if (flights.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+      <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
         <Plane className="w-8 h-8 mb-3" />
         <span>{emptyMessage || 'No flights found'}</span>
       </div>

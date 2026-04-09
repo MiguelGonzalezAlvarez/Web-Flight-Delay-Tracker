@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { AirportSelector, FlightList, FlightSearch, ToastContainer, useToast } from '@/components';
+import { AirportSelector, FlightList, FlightSearch, ToastContainer, useToast, ThemeToggle } from '@/components';
 import { Plane, RefreshCw, Info } from 'lucide-react';
 import { getAirportByIcao } from '@/lib/airports';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -73,7 +73,7 @@ export default function HomePage() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen">
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-20">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-20">
           <div className="max-w-5xl mx-auto px-4 py-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -81,16 +81,19 @@ export default function HomePage() {
                   <Plane className="w-6 h-6 text-white" aria-hidden="true" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">Flight Tracker Spain</h1>
-                  <p className="text-sm text-gray-500">Monitor probable flight delays</p>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">Flight Tracker Spain</h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Monitor probable flight delays</p>
                 </div>
               </div>
-              {lastUpdated && (
-                <div className="flex items-center gap-2 text-sm text-gray-500" aria-live="polite">
-                  <RefreshCw className={`w-4 h-4 ${isValidating ? 'animate-spin' : ''}`} aria-hidden="true" />
-                  <span>Updated: {formattedLastUpdated}</span>
-                </div>
-              )}
+              <div className="flex items-center gap-4">
+                {lastUpdated && (
+                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400" aria-live="polite">
+                    <RefreshCw className={`w-4 h-4 ${isValidating ? 'animate-spin' : ''}`} aria-hidden="true" />
+                    <span className="hidden sm:inline">Updated: {formattedLastUpdated}</span>
+                  </div>
+                )}
+                <ThemeToggle />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -101,7 +104,7 @@ export default function HomePage() {
               />
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1" id="flight-type-label">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" id="flight-type-label">
                   Flight Type
                 </label>
                 <div className="flex gap-2" role="group" aria-labelledby="flight-type-label">
@@ -111,7 +114,7 @@ export default function HomePage() {
                     className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
                       flightType === 'departures'
                         ? 'bg-primary-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
                     }`}
                   >
                     Departures
@@ -122,7 +125,7 @@ export default function HomePage() {
                     className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
                       flightType === 'arrivals'
                         ? 'bg-primary-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
                     }`}
                   >
                     Arrivals
@@ -139,12 +142,12 @@ export default function HomePage() {
           </div>
 
           {airport && (
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg" role="status">
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg" role="status">
               <div className="flex items-start gap-3">
-                <Info className="w-5 h-5 text-blue-600 mt-0.5" aria-hidden="true" />
+                <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" aria-hidden="true" />
                 <div>
-                  <h3 className="font-medium text-blue-900">{airport.name}</h3>
-                  <p className="text-sm text-blue-700">
+                  <h3 className="font-medium text-blue-900 dark:text-blue-200">{airport.name}</h3>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
                     Showing {flightType} for {airport.city}.
                     Data provided by OpenSky Network.
                   </p>
@@ -155,22 +158,22 @@ export default function HomePage() {
 
           {searchResult && (
             <div className="mb-6 animate-fade-in">
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">Search Result</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Search Result</h2>
               <FlightList flights={[searchResult]} type={flightType === 'departures' ? 'departure' : 'arrival'} />
             </div>
           )}
 
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               {flightType === 'departures' ? 'Departures' : 'Arrivals'}
-              <span className="ml-2 text-sm font-normal text-gray-500">
+              <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
                 ({flights.length} flights)
               </span>
             </h2>
             <button
               onClick={handleRefresh}
               disabled={isLoading || isValidating}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50"
               aria-label="Refresh flights"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading || isValidating ? 'animate-spin' : ''}`} aria-hidden="true" />
@@ -181,21 +184,21 @@ export default function HomePage() {
           {isLoading && flights.length === 0 ? (
             <div className="space-y-3" aria-label="Loading flights">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
+                <div key={i} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 animate-pulse">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-5 bg-gray-200 rounded" />
-                        <div className="w-20 h-5 bg-gray-200 rounded" />
+                        <div className="w-8 h-5 bg-gray-200 dark:bg-gray-700 rounded" />
+                        <div className="w-20 h-5 bg-gray-200 dark:bg-gray-700 rounded" />
                       </div>
-                      <div className="w-32 h-4 bg-gray-200 rounded" />
+                      <div className="w-32 h-4 bg-gray-200 dark:bg-gray-700 rounded" />
                     </div>
-                    <div className="w-16 h-10 bg-gray-200 rounded-lg" />
+                    <div className="w-16 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg" />
                   </div>
                   <div className="mt-4 flex items-center gap-4">
-                    <div className="w-20 h-6 bg-gray-200 rounded" />
+                    <div className="w-20 h-6 bg-gray-200 dark:bg-gray-700 rounded" />
                     <div className="flex-1 flex items-center gap-2">
-                      <div className="w-12 h-4 bg-gray-200 rounded" />
+                      <div className="w-12 h-4 bg-gray-200 dark:bg-gray-700 rounded" />
                     </div>
                   </div>
                 </div>
@@ -210,32 +213,32 @@ export default function HomePage() {
             />
           )}
 
-          <div className="mt-8 p-6 bg-white border border-gray-200 rounded-xl">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">About Delay Predictions</h3>
-            <p className="text-gray-600 text-sm leading-relaxed">
+          <div className="mt-8 p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">About Delay Predictions</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
               The delay probability shown is calculated based on historical flight data collected over time.
               Factors include airline performance, route patterns, and time of day. The prediction becomes
               more accurate as more data is collected for each specific flight pattern.
             </p>
             <div className="mt-4 grid grid-cols-3 gap-4 text-center">
-              <div className="p-3 bg-green-100 rounded-lg border border-green-200">
-                <p className="text-lg font-bold text-green-700">Less than 20%</p>
-                <p className="text-xs text-green-600 mt-1">Low Risk</p>
+              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-800">
+                <p className="text-lg font-bold text-green-700 dark:text-green-400">Less than 20%</p>
+                <p className="text-xs text-green-600 dark:text-green-500 mt-1">Low Risk</p>
               </div>
-              <div className="p-3 bg-amber-100 rounded-lg border border-amber-200">
-                <p className="text-lg font-bold text-amber-700">20-50%</p>
-                <p className="text-xs text-amber-600 mt-1">Medium Risk</p>
+              <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-lg border border-amber-200 dark:border-amber-800">
+                <p className="text-lg font-bold text-amber-700 dark:text-amber-400">20-50%</p>
+                <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">Medium Risk</p>
               </div>
-              <div className="p-3 bg-red-100 rounded-lg border border-red-200">
-                <p className="text-lg font-bold text-red-700">More than 50%</p>
-                <p className="text-xs text-red-600 mt-1">High Risk</p>
+              <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg border border-red-200 dark:border-red-800">
+                <p className="text-lg font-bold text-red-700 dark:text-red-400">More than 50%</p>
+                <p className="text-xs text-red-600 dark:text-red-500 mt-1">High Risk</p>
               </div>
             </div>
           </div>
         </main>
 
-        <footer className="border-t border-gray-200 mt-12 py-6">
-          <div className="max-w-5xl mx-auto px-4 text-center text-sm text-gray-500">
+        <footer className="border-t border-gray-200 dark:border-gray-700 mt-12 py-6">
+          <div className="max-w-5xl mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400">
             <p>Flight Tracker Spain - Monitor probable flight delays</p>
             <p className="mt-1">Data provided by OpenSky Network</p>
           </div>

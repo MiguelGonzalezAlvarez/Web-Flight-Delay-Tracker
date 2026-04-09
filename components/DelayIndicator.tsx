@@ -22,15 +22,15 @@ export function DelayIndicator({ prediction, size = 'md' }: DelayIndicatorProps)
   };
 
   const colors = {
-    low: 'text-green-700 bg-green-100 border-green-300',
-    medium: 'text-amber-700 bg-amber-100 border-amber-300',
-    high: 'text-red-700 bg-red-100 border-red-300',
+    low: 'text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700',
+    medium: 'text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700',
+    high: 'text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700',
   };
 
   const bgColors = {
-    low: 'bg-green-50',
-    medium: 'bg-amber-50',
-    high: 'bg-red-50',
+    low: 'bg-green-50 dark:bg-green-900/30',
+    medium: 'bg-amber-50 dark:bg-amber-900/30',
+    high: 'bg-red-50 dark:bg-red-900/30',
   };
 
   const icons = {
@@ -67,7 +67,7 @@ export function DelayIndicator({ prediction, size = 'md' }: DelayIndicatorProps)
       </div>
       <span className="sr-only">{labels[prediction.riskLevel]}</span>
       {prediction.basedOnRecords > 0 && (
-        <span className="text-xs text-gray-500">
+        <span className="text-xs text-gray-500 dark:text-gray-400">
           Based on {prediction.basedOnRecords} flights
         </span>
       )}
@@ -103,12 +103,12 @@ export function DelayBar({ prediction, showLabel = true }: DelayBarProps) {
       aria-label={`Delay risk: ${prediction.percentage}%`}
     >
       {showLabel && (
-        <div className="flex justify-between text-xs text-gray-600 mb-1">
+        <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
           <span>Delay risk ({labels[prediction.riskLevel]})</span>
           <span className="font-medium">{prediction.percentage}%</span>
         </div>
       )}
-      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
         <div
           className={`h-full ${getColor(prediction.percentage)} transition-all duration-500`}
           style={{ width: `${Math.max(prediction.percentage, 5)}%` }}
