@@ -27,6 +27,27 @@ model Flight {
   @@index([origin])
   @@index([destination])
   @@index([callsign])
+  @@index([status])
+  @@index([origin, destination])
+}
+
+model Airport {
+  id          String   @id @default(cuid())
+  icao        String   @unique
+  iata        String?  @unique
+  name        String
+  city        String
+  country     String   @default("Spain")
+  latitude    Float?
+  longitude   Float?
+  isSpanish   Boolean  @default(true)
+  isMajor     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([icao])
+  @@index([iata])
+  @@index([country])
 }
 
 model DelayRecord {
@@ -47,4 +68,5 @@ model DelayRecord {
   @@index([callsign, date])
   @@index([origin, destination])
   @@index([airline])
+  @@index([date])
 }
