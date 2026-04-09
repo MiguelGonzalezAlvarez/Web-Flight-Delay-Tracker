@@ -4,7 +4,12 @@ export type { CallsignParts, FlightStatusValue, RiskLevelValue } from './value-o
 export { Flight, type FlightProps, type FlightType } from './entities/Flight';
 export { Airport, type AirportProps } from './entities/Airport';
 export { DelayPrediction, type DelayPredictionProps } from './entities/DelayPrediction';
+export { Route, type RouteProps } from './entities/Route';
 export { DomainEvent, EventDispatcher, createEventDispatcher } from './events';
 export type { DomainEventMetadata } from './events';
 export { FlightCreatedEvent, FlightStatusChangedEvent, FlightDelayDetectedEvent } from './events';
 export { DelayPredictionCreatedEvent, DelayRiskLevelChangedEvent, HighDelayRiskAlertEvent } from './events';
+export { FlightAggregate, type FlightAggregateProps } from './aggregates';
+export { FlightPathCalculator, type Coordinates, type FlightPathResult } from './services/FlightPathCalculator';
+export { DelayAnalyzer, type DelayStatistics, type RouteDelayAnalysis } from './services/DelayAnalyzer';
+export { RouteAnalyzer, type RouteInfo, type HubAnalysis } from './services/RouteAnalyzer';
