@@ -4,3 +4,7 @@ export type { CallsignParts, FlightStatusValue, RiskLevelValue } from './value-o
 export { Flight, type FlightProps, type FlightType } from './entities/Flight';
 export { Airport, type AirportProps } from './entities/Airport';
 export { DelayPrediction, type DelayPredictionProps } from './entities/DelayPrediction';
+export { DomainEvent, EventDispatcher, createEventDispatcher } from './events';
+export type { DomainEventMetadata } from './events';
+export { FlightCreatedEvent, FlightStatusChangedEvent, FlightDelayDetectedEvent } from './events';
+export { DelayPredictionCreatedEvent, DelayRiskLevelChangedEvent, HighDelayRiskAlertEvent } from './events';
