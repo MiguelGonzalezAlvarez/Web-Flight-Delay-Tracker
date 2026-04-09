@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { calculateDelayPrediction } from '@/lib/delay-prediction';
 import { RateLimiter, getClientIdentifier } from '@/lib/middleware/rateLimit';
 import { sanitizeString, validateCallsign } from '@/lib/middleware/validation';
+import { getPredictionApiService } from '@/src/api/FlightApiService';
+import type { DelayPredictionDTO, ApiErrorDTO } from '@/src/api/dto';
 
 const rateLimiter = new RateLimiter({
   windowMs: 60 * 1000,
@@ -14,13 +15,15 @@ export async function GET(request: NextRequest) {
   const result = await rateLimiter.check(clientId);
 
   if (!result.success) {
+    const errorResponse: ApiErrorDTO = {
+      error: 'Rate limit exceeded',
+      message: 'Too many requests. Please try again later.',
+      retryAfter: Math.ceil(result.resetIn / 1000),
+    };
+
     return NextResponse.json(
+      errorResponse,
       {
-        error: 'Rate limit exceeded',
-        message: 'Too many requests. Please try again later.',
-        retryAfter: Math.ceil(result.resetIn / 1000),
-      },
-      { 
         status: 429,
         headers: {
           'X-RateLimit-Remaining': result.remaining.toString(),
@@ -38,22 +41,21 @@ export async function GET(request: NextRequest) {
   const scheduledTimeStr = searchParams.get('scheduledTime');
 
   if (!airline) {
-    return NextResponse.json(
-      { error: 'Airline parameter is required' },
-      { status: 400 }
-    );
+    const errorResponse: ApiErrorDTO = {
+      error: 'Airline parameter is required',
+      message: 'The airline parameter is required.',
+    };
+    return NextResponse.json(errorResponse, { status: 400 });
   }
 
   const sanitizedAirline = sanitizeString(airline);
 
   if (!validateCallsign(sanitizedAirline)) {
-    return NextResponse.json(
-      {
-        error: 'Invalid airline parameter',
-        message: 'Airline must be a valid airline code or name',
-      },
-      { status: 400 }
-    );
+    const errorResponse: ApiErrorDTO = {
+      error: 'Invalid airline parameter',
+      message: 'Airline must be a valid airline code or name',
+    };
+    return NextResponse.json(errorResponse, { status: 400 });
   }
 
   let scheduledTime: Date;
@@ -64,29 +66,33 @@ export async function GET(request: NextRequest) {
         throw new Error('Invalid date');
       }
     } catch {
-      return NextResponse.json(
-        { error: 'Invalid scheduledTime format', message: 'scheduledTime must be a valid ISO date string' },
-        { status: 400 }
-      );
+      const errorResponse: ApiErrorDTO = {
+        error: 'Invalid scheduledTime format',
+        message: 'scheduledTime must be a valid ISO date string',
+      };
+      return NextResponse.json(errorResponse, { status: 400 });
     }
   } else {
     scheduledTime = new Date();
   }
 
   try {
-    const prediction = await calculateDelayPrediction(
+    const predictionService = getPredictionApiService();
+    const prediction = await predictionService.getPrediction(
       sanitizedAirline,
       origin ? sanitizeString(origin) : '',
       destination ? sanitizeString(destination) : '',
       scheduledTime
     );
 
-    return NextResponse.json(prediction);
+    const typedResponse = prediction as DelayPredictionDTO;
+    return NextResponse.json(typedResponse);
   } catch (error) {
     console.error('Error calculating prediction:', error);
-    return NextResponse.json(
-      { error: 'Failed to calculate prediction', message: 'An unexpected error occurred' },
-      { status: 500 }
-    );
+    const errorResponse: ApiErrorDTO = {
+      error: 'Failed to calculate prediction',
+      message: 'An unexpected error occurred',
+    };
+    return NextResponse.json(errorResponse, { status: 500 });
   }
 }
