@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Flight {
+  id            String   @id @default(cuid())
+  icao24        String
+  callsign      String
+  origin        String
+  destination   String
+  airline       String
+  departureTime DateTime?
+  arrivalTime   DateTime?
+  estimatedTime DateTime?
+  status        String
+  latitude      Float?
+  longitude     Float?
+  altitude      Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([origin])
+  @@index([destination])
+  @@index([callsign])
+}
+
+model DelayRecord {
+  id              String   @id @default(cuid())
+  callsign        String
+  origin          String
+  destination     String
+  airline         String
+  scheduledTime   DateTime
+  actualTime      DateTime?
+  delayMinutes    Int      @default(0)
+  isDelayed       Boolean  @default(false)
+  date            String
+  timeOfDay       String
+  createdAt       DateTime @default(now())
+
+  @@unique([callsign, date])
+  @@index([callsign, date])
+  @@index([origin, destination])
+  @@index([airline])
+}
