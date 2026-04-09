@@ -1,7 +1,7 @@
 'use client';
 
 import { DelayPrediction } from '@/types';
-import { AlertTriangle, AlertCircle, CheckCircle, Minus } from 'lucide-react';
+import { AlertTriangle, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface DelayIndicatorProps {
   prediction: DelayPrediction;
@@ -22,9 +22,15 @@ export function DelayIndicator({ prediction, size = 'md' }: DelayIndicatorProps)
   };
 
   const colors = {
-    low: 'text-green-600 bg-green-50 border-green-200',
-    medium: 'text-yellow-600 bg-yellow-50 border-yellow-200',
-    high: 'text-red-600 bg-red-50 border-red-200',
+    low: 'text-green-700 bg-green-100 border-green-300',
+    medium: 'text-amber-700 bg-amber-100 border-amber-300',
+    high: 'text-red-700 bg-red-100 border-red-300',
+  };
+
+  const bgColors = {
+    low: 'bg-green-50',
+    medium: 'bg-amber-50',
+    high: 'bg-red-50',
   };
 
   const icons = {
@@ -33,16 +39,35 @@ export function DelayIndicator({ prediction, size = 'md' }: DelayIndicatorProps)
     high: AlertTriangle,
   };
 
+  const labels = {
+    low: 'Low risk',
+    medium: 'Medium risk',
+    high: 'High risk',
+  };
+
   const Icon = icons[prediction.riskLevel];
 
   return (
-    <div className={`flex flex-col items-center gap-1 ${sizeClasses[size]}`}>
-      <div className={`flex items-center gap-1 px-2 py-1 rounded-full border ${colors[prediction.riskLevel]}`}>
-        <Icon className={iconSizes[size]} />
+    <div 
+      className={`flex flex-col items-center gap-1 ${sizeClasses[size]}`}
+      role="meter"
+      aria-valuenow={prediction.percentage}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={`Delay probability: ${prediction.percentage}% (${labels[prediction.riskLevel]})`}
+    >
+      <div 
+        className={`flex items-center gap-1 px-2 py-1 rounded-full border ${colors[prediction.riskLevel]}`}
+      >
+        <Icon 
+          className={iconSizes[size]} 
+          aria-hidden="true"
+        />
         <span className="font-semibold">{prediction.percentage}%</span>
       </div>
+      <span className="sr-only">{labels[prediction.riskLevel]}</span>
       {prediction.basedOnRecords > 0 && (
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-gray-500">
           Based on {prediction.basedOnRecords} flights
         </span>
       )}
@@ -58,16 +83,29 @@ interface DelayBarProps {
 export function DelayBar({ prediction, showLabel = true }: DelayBarProps) {
   const getColor = (percentage: number) => {
     if (percentage < 20) return 'bg-green-500';
-    if (percentage < 50) return 'bg-yellow-500';
+    if (percentage < 50) return 'bg-amber-500';
     return 'bg-red-500';
   };
 
+  const labels = {
+    low: 'Low',
+    medium: 'Medium',
+    high: 'High',
+  };
+
   return (
-    <div className="w-full">
+    <div 
+      className="w-full"
+      role="progressbar"
+      aria-valuenow={prediction.percentage}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={`Delay risk: ${prediction.percentage}%`}
+    >
       {showLabel && (
-        <div className="flex justify-between text-xs text-gray-500 mb-1">
-          <span>Delay risk</span>
-          <span>{prediction.percentage}%</span>
+        <div className="flex justify-between text-xs text-gray-600 mb-1">
+          <span>Delay risk ({labels[prediction.riskLevel]})</span>
+          <span className="font-medium">{prediction.percentage}%</span>
         </div>
       )}
       <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">

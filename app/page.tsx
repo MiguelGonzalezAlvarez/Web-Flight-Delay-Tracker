@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { AirportSelector, FlightList, FlightSearch } from '@/components';
+import { AirportSelector, FlightList, FlightSearch, ToastContainer, useToast } from '@/components';
 import { Flight } from '@/types';
 import { Plane, RefreshCw, Info } from 'lucide-react';
 import { getAirportByIcao } from '@/lib/airports';
@@ -12,9 +12,11 @@ export default function HomePage() {
   const [flightType, setFlightType] = useState<'departures' | 'arrivals'>('departures');
   const [flights, setFlights] = useState<Flight[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [searchResult, setSearchResult] = useState<Flight | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { toasts, dismissToast, success, error: showError } = useToast();
 
   const airport = getAirportByIcao(selectedAirport);
 
@@ -32,13 +34,18 @@ export default function HomePage() {
       const data = await response.json();
       setFlights(data.flights || []);
       setLastUpdated(new Date());
+      
+      if (initialLoad) {
+        setInitialLoad(false);
+      }
     } catch (err) {
       setError('Unable to fetch flights. Please try again later.');
+      showError('Failed to load flights');
       setFlights([]);
     } finally {
       setLoading(false);
     }
-  }, [selectedAirport, flightType]);
+  }, [selectedAirport, flightType, initialLoad, showError]);
 
   const handleSearch = useCallback(async (callsign: string) => {
     setLoading(true);
@@ -61,22 +68,25 @@ export default function HomePage() {
 
       if (foundFlight) {
         setSearchResult(foundFlight);
+        success(`Found flight: ${foundFlight.callsign}`);
       } else {
         setError(`No flight found with callsign: ${callsign}`);
+        showError('Flight not found');
       }
     } catch (err) {
       setError('Unable to search flight. Please try again.');
+      showError('Search failed');
     } finally {
       setLoading(false);
     }
-  }, [selectedAirport, flightType]);
+  }, [selectedAirport, flightType, success, showError]);
 
   useEffect(() => {
     fetchFlights();
   }, [fetchFlights]);
 
   useEffect(() => {
-    const interval = setInterval(fetchFlights, 60000);
+    const interval = setInterval(fetchFlights, 120000);
     return () => clearInterval(interval);
   }, [fetchFlights]);
 
@@ -102,7 +112,7 @@ export default function HomePage() {
               {lastUpdated && (
                 <div className="flex items-center gap-2 text-sm text-gray-500" aria-live="polite">
                   <RefreshCw className="w-4 h-4" aria-hidden="true" />
-                  <span>Last updated: {formattedLastUpdated}</span>
+                  <span>Updated: {formattedLastUpdated}</span>
                 </div>
               )}
             </div>
@@ -147,13 +157,13 @@ export default function HomePage() {
           </div>
         </header>
 
-        <main className="max-w-5xl mx-auto px-4 py-6">
+        <main id="main-content" className="max-w-5xl mx-auto px-4 py-6">
           <div className="mb-6">
             <FlightSearch onSearch={handleSearch} loading={loading} />
           </div>
 
           {airport && (
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-lg" role="status">
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg" role="status">
               <div className="flex items-start gap-3">
                 <Info className="w-5 h-5 text-blue-600 mt-0.5" aria-hidden="true" />
                 <div>
@@ -168,13 +178,13 @@ export default function HomePage() {
           )}
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-lg" role="alert">
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg" role="alert">
               <p className="text-red-700">{error}</p>
             </div>
           )}
 
           {searchResult && (
-            <div className="mb-6">
+            <div className="mb-6 animate-fade-in">
               <h2 className="text-lg font-semibold text-gray-900 mb-3">Search Result</h2>
               <FlightList flights={[searchResult]} type={flightType === 'departures' ? 'departure' : 'arrival'} />
             </div>
@@ -198,12 +208,37 @@ export default function HomePage() {
             </button>
           </div>
 
-          <FlightList
-            flights={flights}
-            type={flightType === 'departures' ? 'departure' : 'arrival'}
-            loading={loading}
-            emptyMessage="No flights available at this time. Flights are typically available 2 hours before departure."
-          />
+          {loading && initialLoad ? (
+            <div className="space-y-3" aria-label="Loading flights">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-5 bg-gray-200 rounded" />
+                        <div className="w-20 h-5 bg-gray-200 rounded" />
+                      </div>
+                      <div className="w-32 h-4 bg-gray-200 rounded" />
+                    </div>
+                    <div className="w-16 h-10 bg-gray-200 rounded-lg" />
+                  </div>
+                  <div className="mt-4 flex items-center gap-4">
+                    <div className="w-20 h-6 bg-gray-200 rounded" />
+                    <div className="flex-1 flex items-center gap-2">
+                      <div className="w-12 h-4 bg-gray-200 rounded" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <FlightList
+              flights={flights}
+              type={flightType === 'departures' ? 'departure' : 'arrival'}
+              loading={loading}
+              emptyMessage="No flights available at this time. Flights are typically available 2 hours before departure."
+            />
+          )}
 
           <div className="mt-8 p-6 bg-white border border-gray-200 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">About Delay Predictions</h3>
@@ -213,17 +248,17 @@ export default function HomePage() {
               more accurate as more data is collected for each specific flight pattern.
             </p>
             <div className="mt-4 grid grid-cols-3 gap-4 text-center">
-              <div className="p-3 bg-green-50 rounded-lg">
-                <p className="text-2xl font-bold text-green-600">Less than 20%</p>
-                <p className="text-xs text-green-700">Low Risk</p>
+              <div className="p-3 bg-green-100 rounded-lg border border-green-200">
+                <p className="text-lg font-bold text-green-700">Less than 20%</p>
+                <p className="text-xs text-green-600 mt-1">Low Risk</p>
               </div>
-              <div className="p-3 bg-yellow-50 rounded-lg">
-                <p className="text-2xl font-bold text-yellow-600">20-50%</p>
-                <p className="text-xs text-yellow-700">Medium Risk</p>
+              <div className="p-3 bg-amber-100 rounded-lg border border-amber-200">
+                <p className="text-lg font-bold text-amber-700">20-50%</p>
+                <p className="text-xs text-amber-600 mt-1">Medium Risk</p>
               </div>
-              <div className="p-3 bg-red-50 rounded-lg">
-                <p className="text-2xl font-bold text-red-600">More than 50%</p>
-                <p className="text-xs text-red-700">High Risk</p>
+              <div className="p-3 bg-red-100 rounded-lg border border-red-200">
+                <p className="text-lg font-bold text-red-700">More than 50%</p>
+                <p className="text-xs text-red-600 mt-1">High Risk</p>
               </div>
             </div>
           </div>
@@ -235,6 +270,8 @@ export default function HomePage() {
             <p className="mt-1">Data provided by OpenSky Network</p>
           </div>
         </footer>
+
+        <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       </div>
     </ErrorBoundary>
   );

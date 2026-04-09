@@ -17,6 +17,12 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className="antialiased min-h-screen bg-gray-50">
+        <a
+          href="#main-content"
+          className="skip-to-content"
+        >
+          Skip to main content
+        </a>
         {children}
       </body>
     </html>

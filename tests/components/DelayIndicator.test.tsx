@@ -48,7 +48,7 @@ describe('DelayBar', () => {
     const prediction = { percentage: 30, avgDelayMinutes: 20, basedOnRecords: 75, riskLevel: 'medium' as const };
     render(<DelayBar prediction={prediction} />);
     
-    expect(screen.getByText('Delay risk')).toBeInTheDocument();
+    expect(screen.getByText('Delay risk (Medium)')).toBeInTheDocument();
     expect(screen.getByText('30%')).toBeInTheDocument();
   });
 
@@ -56,6 +56,6 @@ describe('DelayBar', () => {
     const prediction = { percentage: 15, avgDelayMinutes: 10, basedOnRecords: 25, riskLevel: 'low' as const };
     render(<DelayBar prediction={prediction} showLabel={false} />);
     
-    expect(screen.queryByText('Delay risk')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Delay risk/)).not.toBeInTheDocument();
   });
 });
